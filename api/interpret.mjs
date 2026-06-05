@@ -41,14 +41,14 @@ export default async function handler(req, res) {
     if (API_PROVIDER === 'claude') {
       body = {
         model: API_MODEL,
-        max_tokens: 512,
+        max_tokens: 2048,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       };
     } else {
       body = {
         model: API_MODEL,
-        max_tokens: 512,
+        max_tokens: 2048,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },

@@ -47,14 +47,14 @@ export default {
       if (provider === 'claude') {
         body = {
           model,
-          max_tokens: 512,
+          max_tokens: 2048,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }],
         };
       } else {
         body = {
           model,
-          max_tokens: 512,
+          max_tokens: 2048,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
