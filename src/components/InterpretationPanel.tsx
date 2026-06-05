@@ -26,36 +26,52 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
     const systemPrompt = buildInterpretationSystemPrompt();
     const userPrompt = buildInterpretationPrompt(paiPan, question);
 
-    // Use Vercel API when on GitHub Pages, local proxy otherwise
-    const apiBase = window.location.hostname.includes('github.io')
-      ? 'https://liuyao-xi.vercel.app'
-      : '';
+    // On GitHub Pages: try Cloudflare Worker first, then Vercel
+    const isGitHubPages = window.location.hostname.includes('github.io');
+    const apiEndpoints = isGitHubPages
+      ? [
+          'https://liuyao-api.ma16629312300.workers.dev',            // Cloudflare Worker (root path)
+          'https://liuyao-xi.vercel.app/api/interpret',              // Vercel fallback
+        ]
+      : ['/api/interpret'];                                          // Local proxy
 
-    try {
-      const response = await fetch(`${apiBase}/api/interpret`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ systemPrompt, userPrompt }),
-      });
+    let cloudSuccess = false;
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `服务器错误 (${response.status})`);
+    for (const url of apiEndpoints) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ systemPrompt, userPrompt }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `服务器错误 (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (!data.text) throw new Error('AI 返回空响应');
+
+        setInterpretation(data.text);
+        cloudSuccess = true;
+        break; // stop trying other endpoints
+      } catch (err: any) {
+        console.warn(`API ${base} 不可用:`, err.message);
+        continue; // try next endpoint
       }
+    }
 
-      const data = await response.json();
-      if (!data.text) throw new Error('AI 返回空响应');
-
-      setInterpretation(data.text);
-    } catch (err: any) {
-      console.error('云端解卦暂不可用，切换为本地解卦:', err.message);
+    // All cloud APIs failed, fall back to local
+    if (!cloudSuccess) {
+      console.warn('所有云端 API 不可用，切换为本地解卦');
       setUsingLocal(true);
+      setError('云端连接暂不可用，已切换本地推演');
       const localResult = generateLocalInterpretation(paiPan, question);
       setInterpretation(localResult);
-      setError(err.message || '网络错误');
-    } finally {
-      setIsGenerating(false);
     }
+
+    setIsGenerating(false);
   }, [paiPan, question]);
 
   const handleCopy = () => {

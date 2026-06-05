@@ -1,0 +1,8 @@
+name = "liuyao-api"
+main = "worker.js"
+compatibility_date = "2025-06-05"
+
+[vars]
+API_PROVIDER = "deepseek"
+API_BASE_URL = "https://api.deepseek.com"
+API_MODEL = "deepseek-chat"
