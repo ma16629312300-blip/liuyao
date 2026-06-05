@@ -11,71 +11,62 @@ function getCtx(): AudioContext {
   return sharedCtx;
 }
 
-// ====== Ambient drone — 庙堂环境底音 ======
+// ====== Ambient music — 五声音阶冥想旋律 ======
+
+const PENTATONIC = [262, 294, 330, 392, 440]; // C D E G A (宫商角徵羽)
+const PENTATONIC_HIGH = [524, 588, 660, 784, 880]; // 高八度
 
 export function useAmbientMusic() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const nodesRef = useRef<{
-    osc1: OscillatorNode;
-    osc2: OscillatorNode;
-    gain1: GainNode;
-    gain2: GainNode;
-    lfo: OscillatorNode;
-    lfoGain: GainNode;
-  } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const start = useCallback(() => {
+  const playNote = useCallback((freq: number, duration: number, volume = 0.06) => {
     const ctx = getCtx();
-    if (nodesRef.current) return; // already playing
-
-    // LFO for slow volume modulation (breathing)
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.15; // very slow — 6.7s cycle
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 0.3;
-    lfo.connect(lfoGain);
-
-    // Osc 1 — low drone (fundamental)
-    const osc1 = ctx.createOscillator();
-    osc1.type = 'sine';
-    osc1.frequency.value = 55; // A1
-    const gain1 = ctx.createGain();
-    gain1.gain.value = 0.04;
-    lfoGain.connect(gain1.gain);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-
-    // Osc 2 — fifth above, gentle
-    const osc2 = ctx.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.value = 82.5; // E2 (perfect fifth)
-    const gain2 = ctx.createGain();
-    gain2.gain.value = 0.025;
-    lfoGain.connect(gain2.gain);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-
-    osc1.start();
-    osc2.start();
-    lfo.start();
-
-    nodesRef.current = { osc1, osc2, gain1, gain2, lfo, lfoGain };
-    setIsPlaying(true);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + duration * 0.3); // slow attack
+    gain.gain.setValueAtTime(volume, ctx.currentTime + duration * 0.6);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration); // slow release
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration + 0.1);
   }, []);
 
+  const start = useCallback(() => {
+    if (timerRef.current) return;
+
+    // Gentle pentatonic melody loop — slow, meditative
+    let noteIndex = 0;
+    const playNext = () => {
+      const pool = Math.random() < 0.4 ? PENTATONIC : PENTATONIC_HIGH;
+      const freq = pool[noteIndex % pool.length];
+      const duration = 2.5 + Math.random() * 2; // 2.5-4.5s per note
+      playNote(freq, duration, 0.04 + Math.random() * 0.03);
+
+      // Sometimes play two notes together (harmony)
+      if (Math.random() < 0.3) {
+        const harmonyFreq = pool[(noteIndex + 2) % pool.length];
+        playNote(harmonyFreq, duration * 0.7, 0.02);
+      }
+
+      noteIndex++;
+      const nextDelay = duration * 800 + Math.random() * 1500; // gap between notes
+      timerRef.current = setTimeout(playNext, nextDelay);
+    };
+
+    playNext();
+    setIsPlaying(true);
+  }, [playNote]);
+
   const stop = useCallback(() => {
-    const nodes = nodesRef.current;
-    if (!nodes) return;
-    nodes.osc1.stop();
-    nodes.osc2.stop();
-    nodes.lfo.stop();
-    nodes.osc1.disconnect();
-    nodes.osc2.disconnect();
-    nodes.gain1.disconnect();
-    nodes.gain2.disconnect();
-    nodes.lfo.disconnect();
-    nodes.lfoGain.disconnect();
-    nodesRef.current = null;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     setIsPlaying(false);
   }, []);
 
@@ -83,10 +74,9 @@ export function useAmbientMusic() {
     if (isPlaying) stop(); else start();
   }, [isPlaying, start, stop]);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => { if (nodesRef.current) stop(); };
-  }, [stop]);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
 
   return { isPlaying, toggle, start, stop };
 }
