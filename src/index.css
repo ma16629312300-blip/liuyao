@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   暗夜庙堂 · 六爻占卜
+   Dark Temple · Divination Chamber
+   ============================================================ */
+
+:root {
+  --bg-deep: #0f0a05;
+  --bg-card: rgba(20, 14, 8, 0.7);
+  --bg-card-hover: rgba(28, 20, 12, 0.8);
+  --text-primary: #f0e6d3;
+  --text-secondary: #b8a080;
+  --text-muted: #6b5c44;
+  --accent: #e8b931;
+  --accent-glow: rgba(232, 185, 49, 0.3);
+  --red-glow: rgba(239, 68, 68, 0.4);
+  --border-subtle: rgba(184, 160, 128, 0.15);
+  --border-gold: rgba(232, 185, 49, 0.3);
+}
+
+body {
+  margin: 0;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  cursor: default;
+}
+
+#root { min-height: 100vh; isolation: isolate; }
+
+/* Custom cursor glow (via JS) */
+.cursor-glow {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232,185,49,0.12) 0%, rgba(232,185,49,0.05) 25%, transparent 60%);
+  transform: translate(-50%, -50%);
+  will-change: left, top;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(180,150,100,0.3); border-radius: 2px; }
+
+/* Selection */
+::selection {
+  background: rgba(232, 185, 49, 0.25);
+  color: #f0e6d3;
+}
+
+/* ====== Dark Glass Card ====== */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+}
+
+/* ====== Keyframes ====== */
+
+/* Breath — soft opacity pulse (compositor-only) */
+@keyframes breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+/* Star twinkle — gentle scale + opacity */
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(2); }
+  70% { opacity: 0.15; transform: scale(0.6); }
+}
+
+/* Smoke rise — translateY + fade (compositor-only) */
+@keyframes smokeRise {
+  0% { transform: translateY(0) scale(0.8); opacity: 1; }
+  100% { transform: translateY(-110vh) scale(6); opacity: 0; }
+}
+
+/* Slow spin — for bagua ring */
+@keyframes slowSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Symbol float — gentle translate + opacity */
+@keyframes symbolFloat {
+  0%, 100% { opacity: 0.2; transform: translateY(0) translateX(0); }
+  33% { opacity: 0.9; transform: translateY(-20px) translateX(10px); }
+  66% { opacity: 0.35; transform: translateY(-10px) translateX(-5px); }
+}
+
+/* Dust float — subtle drift */
+@keyframes dustFloat {
+  0%, 100% { opacity: 0; transform: translateY(0) translateX(0) scale(0.5); }
+  25% { opacity: 1; transform: translateY(-30px) translateX(15px) scale(1.5); }
+  50% { opacity: 0.5; transform: translateY(-50px) translateX(-10px) scale(1); }
+  75% { opacity: 0.15; transform: translateY(-70px) translateX(5px) scale(0.7); }
+}
+
+/* Beam slide */
+@keyframes beamSlide1 {
+  0%, 100% { opacity: 0; transform: rotate(-25deg) translateX(0); }
+  20% { opacity: 0.6; }
+  40% { opacity: 0; transform: rotate(-25deg) translateX(120px); }
+}
+
+@keyframes beamSlide2 {
+  0%, 100% { opacity: 0; transform: rotate(15deg) translateX(0); }
+  20% { opacity: 0.5; }
+  40% { opacity: 0; transform: rotate(15deg) translateX(-120px); }
+}
+
+/* === Keep existing utility animations === */
+
+@keyframes textShine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes coinBounce {
+  0% { transform: translateY(-200px) rotateX(0); }
+  40% { transform: translateY(20px) rotateX(720deg); }
+  60% { transform: translateY(-10px) rotateX(900deg); }
+  80% { transform: translateY(5px) rotateX(1080deg); }
+  100% { transform: translateY(0) rotateX(1440deg); }
+}
+
+@keyframes floatUpFade {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ====== Utility ====== */
+
+.text-shine {
+  background: linear-gradient(90deg, #b89360 0%, #e8b931 30%, #f5d77a 50%, #e8b931 70%, #b89360 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: textShine 4s linear infinite;
+}
+
+/* ====== Reduced Motion ====== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
