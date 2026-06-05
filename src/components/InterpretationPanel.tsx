@@ -43,7 +43,7 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
     for (const url of apiEndpoints) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => controller.abort(), 20000);
 
         const response = await fetch(url, {
           method: 'POST',
