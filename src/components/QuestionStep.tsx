@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronRight } from 'lucide-react';
 import type { QuestionType } from '../engine/types';
 import { useLiuyaoStore } from '../store/useLiuyaoStore';
+import { playClickSound } from '../hooks/useAudio';
 
 const QUESTION_TYPES: { value: QuestionType; label: string; icon: string }[] = [
   { value: '财运', label: '财运', icon: '💰' },
@@ -31,6 +32,7 @@ export default function QuestionStep() {
   const handleSubmit = () => {
     if (!question.trim()) { setError('请输入您想问的问题'); return; }
     setError('');
+    playClickSound();
     startToss();
   };
 

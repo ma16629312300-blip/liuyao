@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, RotateCcw, Sparkles } from 'lucide-react';
 import type { TossResult, PaiPanResult, SiXiang } from '../engine/types';
 import { tossThreeCoins, siXiangLabel, siXiangSymbol } from '../engine/toss';
+import { playCoinSound, playCoinFlySound, playRevealSound, playCompleteSound } from '../hooks/useAudio';
 import { buildYaoLines } from '../engine/toss';
 import { getHexagrams, getChangingLines } from '../engine/hexagram';
 import { applyNajiaV2 } from '../engine/najia';
@@ -84,15 +85,18 @@ export default function TossStep() {
 
     setPhase('charging');
     setRevealedResult(null);
+    playCoinSound(); // 铜钱碰撞声
 
     setTimeout(() => {
       setPhase('flying');
+      playCoinFlySound(); // 飞行声
       setTimeout(() => {
         const result = tossThreeCoins();
         setRevealedResult(result);
         setPhase('reveal');
         setShakeKey(k => k + 1);
         setFlashKey(k => k + 1);
+        playRevealSound(); // 揭示声
 
         setTimeout(() => {
           const tossResult: TossResult = {
@@ -111,6 +115,7 @@ export default function TossStep() {
   }, [phase, tosses.length, store]);
 
   const completeAndCalculate = useCallback(() => {
+    playCompleteSound(); // 完成钟鸣
     const yaoLines = buildYaoLines(store.tosses);
     const { original, changed } = getHexagrams(yaoLines);
     if (!original) return;
@@ -660,7 +665,7 @@ export default function TossStep() {
                 摇卦（第 {tosses.length + 1}/6 次）
               </motion.button>
 
-              {tosses.length === 0 && (
+              {(
                 <motion.button
                   onClick={handleAutoToss}
                   disabled={phase !== 'ready'}
@@ -673,7 +678,7 @@ export default function TossStep() {
                   }`}
                 >
                   <Sparkles size={18} />
-                  自动起卦
+                  {tosses.length === 0 ? '自动起卦' : `完成剩余 ${6 - tosses.length} 次`}
                 </motion.button>
               )}
             </>
