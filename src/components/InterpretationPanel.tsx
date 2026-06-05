@@ -13,34 +13,37 @@ interface Props {
 export default function InterpretationPanel({ paiPan, question }: Props) {
   const [interpretation, setInterpretation] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [cloudTrying, setCloudTrying] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [usingLocal, setUsingLocal] = useState(false);
 
   const handleGenerate = useCallback(async () => {
-    setIsGenerating(true);
-    setError('');
+    // 1. Show local interpretation INSTANTLY (always available)
     setInterpretation('');
-    setUsingLocal(false);
+    setIsGenerating(false); // don't show spinner
+    setUsingLocal(true);
+    setError('');
+    const localResult = generateLocalInterpretation(paiPan, question);
+    setInterpretation(localResult);
 
+    // 2. Try AI in background — replace if succeeds quickly
+    setCloudTrying(true);
     const systemPrompt = buildInterpretationSystemPrompt();
     const userPrompt = buildInterpretationPrompt(paiPan, question);
 
-    // On GitHub Pages: try Cloudflare Worker first, then Vercel
     const isGitHubPages = window.location.hostname.includes('github.io');
     const apiEndpoints = isGitHubPages
       ? [
-          'https://liuyao-api.ma16629312300.workers.dev',            // Cloudflare Worker (root path)
-          'https://liuyao-xi.vercel.app/api/interpret',              // Vercel fallback
+          'https://liuyao-api.ma16629312300.workers.dev',
+          'https://liuyao-xi.vercel.app/api/interpret',
         ]
-      : ['/api/interpret'];                                          // Local proxy
-
-    let cloudSuccess = false;
+      : ['/api/interpret'];
 
     for (const url of apiEndpoints) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        const timeout = setTimeout(() => controller.abort(), 5000);
 
         const response = await fetch(url, {
           method: 'POST',
@@ -50,33 +53,20 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
         });
         clearTimeout(timeout);
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `服务器错误 (${response.status})`);
-        }
-
+        if (!response.ok) throw new Error('API error');
         const data = await response.json();
-        if (!data.text) throw new Error('AI 返回空响应');
+        if (!data.text) throw new Error('Empty');
 
         setInterpretation(data.text);
-        cloudSuccess = true;
-        break; // stop trying other endpoints
-      } catch (err: any) {
-        console.warn(`API ${base} 不可用:`, err.message);
-        continue; // try next endpoint
+        setUsingLocal(false);
+        setCloudTrying(false);
+        return;
+      } catch {
+        continue;
       }
     }
-
-    // All cloud APIs failed, fall back to local
-    if (!cloudSuccess) {
-      console.warn('所有云端 API 不可用，切换为本地解卦');
-      setUsingLocal(true);
-      setError('云端连接暂不可用，已切换本地推演');
-      const localResult = generateLocalInterpretation(paiPan, question);
-      setInterpretation(localResult);
-    }
-
-    setIsGenerating(false);
+    setCloudTrying(false);
+    // AI failed silently — local interpretation already showing
   }, [paiPan, question]);
 
   const handleCopy = () => {
@@ -94,7 +84,7 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
     >
       <div className="px-6 py-4 bg-gradient-to-r from-[rgba(232,185,49,0.1)]/80 to-[rgba(30,22,14,0.5)]/60 border-b border-[rgba(184,160,128,0.1)] flex items-center justify-between">
         <h3 className="text-lg font-serif font-bold text-[#f0e6d3]">解卦分析</h3>
-        {!interpretation && !isGenerating && (
+        {(
           <motion.button
             onClick={handleGenerate}
             whileHover={{ scale: 1.05 }}
@@ -102,7 +92,7 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-br from-gold-400 to-gold-600 text-white rounded-xl text-sm font-medium shadow-sm hover:shadow-md transition-shadow"
           >
             <Sparkles size={16} />
-            开始解卦
+            {interpretation ? '重新解卦' : '开始解卦'}
           </motion.button>
         )}
       </div>
@@ -196,7 +186,7 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
 
               <div className="mt-6 pt-4 border-t border-[rgba(184,160,128,0.1)] flex items-center justify-between">
                 <span className="text-xs text-[#4a3d2e]">
-                  {usingLocal ? '📍 本地推演' : '☁️ 云端推演'}
+                  {cloudTrying ? '⏳ 云端尝试中...' : usingLocal ? '📍 本地推演' : '☁️ 云端推演'}
                 </span>
                 <motion.button
                   onClick={handleCopy}
