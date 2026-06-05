@@ -8,9 +8,7 @@
  *   API_MODEL=deepseek-chat
  */
 
-// Use CommonJS for Vercel compatibility
-module.exports = async function handler(req, res) {
-  // CORS
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -36,7 +34,7 @@ module.exports = async function handler(req, res) {
     const API_MODEL = process.env.API_MODEL || 'deepseek-chat';
 
     if (!API_KEY) {
-      return res.status(500).json({ error: 'API_KEY not configured' });
+      return res.status(500).json({ error: 'API_KEY not configured. Please set env vars in Vercel and redeploy.' });
     }
 
     let body;
@@ -87,9 +85,9 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'AI returned empty response' });
     }
 
-    res.json({ text });
+    return res.json({ text });
   } catch (err) {
     console.error('[Server Error]', err);
-    res.status(500).json({ error: 'Internal server error: ' + (err.message || 'unknown') });
+    return res.status(500).json({ error: 'Internal server error: ' + (err.message || 'unknown') });
   }
-};
+}
