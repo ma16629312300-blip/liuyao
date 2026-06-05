@@ -1,14 +1,15 @@
 /**
  * Vercel Serverless Function — AI 解卦 API
  *
- * Deploy: push to GitHub → import to Vercel → set env vars:
+ * Environment variables (set in Vercel dashboard):
  *   API_PROVIDER=deepseek
- *   API_KEY=your-api-key
+ *   API_KEY=sk-xxx
  *   API_BASE_URL=https://api.deepseek.com
  *   API_MODEL=deepseek-chat
  */
 
-export default async function handler(req, res) {
+// Use CommonJS for Vercel compatibility
+module.exports = async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -26,7 +27,7 @@ export default async function handler(req, res) {
     const { systemPrompt, userPrompt } = req.body;
 
     if (!systemPrompt || !userPrompt) {
-      return res.status(400).json({ error: '缺少 systemPrompt 或 userPrompt' });
+      return res.status(400).json({ error: 'Missing systemPrompt or userPrompt' });
     }
 
     const API_PROVIDER = process.env.API_PROVIDER || 'deepseek';
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
     const API_MODEL = process.env.API_MODEL || 'deepseek-chat';
 
     if (!API_KEY) {
-      return res.status(500).json({ error: '服务器未配置 API_KEY' });
+      return res.status(500).json({ error: 'API_KEY not configured' });
     }
 
     let body;
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errText = await response.text();
       console.error(`[API Error] ${response.status}: ${errText}`);
-      return res.status(response.status).json({ error: `AI API 返回错误 (${response.status})` });
+      return res.status(response.status).json({ error: `AI API error (${response.status})` });
     }
 
     const data = await response.json();
@@ -83,12 +84,12 @@ export default async function handler(req, res) {
     }
 
     if (!text) {
-      return res.status(500).json({ error: 'AI 返回空响应' });
+      return res.status(500).json({ error: 'AI returned empty response' });
     }
 
     res.json({ text });
   } catch (err) {
     console.error('[Server Error]', err);
-    res.status(500).json({ error: '服务器内部错误: ' + (err.message || '未知错误') });
+    res.status(500).json({ error: 'Internal server error: ' + (err.message || 'unknown') });
   }
-}
+};
