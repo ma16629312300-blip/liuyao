@@ -22,10 +22,10 @@ if (!isDev && existsSync(distPath)) {
 
 // ====== AI API Proxy ======
 
-const API_PROVIDER = process.env.API_PROVIDER || 'deepseek'; // deepseek | openai | claude
-const API_KEY = process.env.API_KEY || '';
-const API_BASE_URL = process.env.API_BASE_URL || 'https://api.deepseek.com';
-const API_MODEL = process.env.API_MODEL || 'deepseek-chat';
+const API_PROVIDER = (process.env.API_PROVIDER || 'deepseek').trim();
+const API_KEY = (process.env.API_KEY || '').trim();
+const API_BASE_URL = (process.env.API_BASE_URL || 'https://api.deepseek.com').trim();
+const API_MODEL = (process.env.API_MODEL || 'deepseek-chat').trim();
 
 app.post('/api/interpret', async (req, res) => {
   try {
@@ -60,7 +60,8 @@ app.post('/api/interpret', async (req, res) => {
       };
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+    const apiUrl = new URL('/v1/chat/completions', API_BASE_URL);
+    const response = await fetch(apiUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

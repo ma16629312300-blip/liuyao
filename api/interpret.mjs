@@ -28,10 +28,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing systemPrompt or userPrompt' });
     }
 
-    const API_PROVIDER = process.env.API_PROVIDER || 'deepseek';
-    const API_KEY = process.env.API_KEY || '';
-    const API_BASE_URL = process.env.API_BASE_URL || 'https://api.deepseek.com';
-    const API_MODEL = process.env.API_MODEL || 'deepseek-chat';
+    const API_PROVIDER = (process.env.API_PROVIDER || 'deepseek').trim();
+    const API_KEY = (process.env.API_KEY || '').trim();
+    const API_BASE_URL = (process.env.API_BASE_URL || 'https://api.deepseek.com').trim();
+    const API_MODEL = (process.env.API_MODEL || 'deepseek-chat').trim();
 
     if (!API_KEY) {
       return res.status(500).json({ error: 'API_KEY not configured. Please set env vars in Vercel and redeploy.' });
@@ -56,7 +56,8 @@ export default async function handler(req, res) {
       };
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/chat/completions`, {
+    const apiUrl = new URL('/v1/chat/completions', API_BASE_URL);
+    const response = await fetch(apiUrl.toString(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
