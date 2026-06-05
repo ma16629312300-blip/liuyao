@@ -26,8 +26,13 @@ export default function InterpretationPanel({ paiPan, question }: Props) {
     const systemPrompt = buildInterpretationSystemPrompt();
     const userPrompt = buildInterpretationPrompt(paiPan, question);
 
+    // Use Vercel API when on GitHub Pages, local proxy otherwise
+    const apiBase = window.location.hostname.includes('github.io')
+      ? 'https://liuyao-xi.vercel.app'
+      : '';
+
     try {
-      const response = await fetch('/api/interpret', {
+      const response = await fetch(`${apiBase}/api/interpret`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ systemPrompt, userPrompt }),
